@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/textproto"
@@ -43,7 +42,7 @@ func (e *mmaEncoder) Encode(v interface{}) error {
 
 	// 1. write SOAP envelope part
 	headers := make(textproto.MIMEHeader)
-	headers.Set("Content-Type", `text/xml;charset=UTF-8`)
+	headers.Set("Content-Type", `text/xml; charset=UTF-8`)
 	headers.Set("Content-Transfer-Encoding", "8bit")
 	headers.Set("Content-ID", "<soaprequest@gowsdl.lib>")
 	if soapPartWriter, err = e.writer.CreatePart(headers); err != nil {
@@ -97,8 +96,8 @@ func getMmaHeader(contentType string) (string, error) {
 		}
 
 		startInfo, ok := params["start"]
-		if !ok || startInfo != "<soaprequest@gowsdl.lib>" {
-			return "", fmt.Errorf(`expected param start="<soaprequest@gowsdl.lib>", got %s`, startInfo)
+		if !ok || !strings.Contains(startInfo, "@apache.org") {
+			return "", fmt.Errorf(`expected param start with "@apache.org", got %s`, startInfo)
 		}
 		return boundary, nil
 	}
@@ -118,7 +117,7 @@ func (d *mmaDecoder) Decode(v interface{}) error {
 			return err
 		}
 		contentType := p.Header.Get("Content-Type")
-		if contentType == "text/xml;charset=UTF-8" {
+		if contentType == "text/xml; charset=UTF-8" {
 			// decode SOAP part
 			err := xml.NewDecoder(p).Decode(v)
 			if err != nil {
@@ -128,9 +127,15 @@ func (d *mmaDecoder) Decode(v interface{}) error {
 			// decode attachment parts
 			contentID := p.Header.Get("Content-Id")
 			if contentID == "" {
-				return errors.New("Invalid multipart content ID")
+				return errors.New("invalid multipart content ID")
 			}
-			content, err := ioutil.ReadAll(p)
+
+			if strings.Contains(contentID, "gowsdl") {
+				// skip request content
+				continue
+			}
+
+			content, err := io.ReadAll(p)
 			if err != nil {
 				return err
 			}
