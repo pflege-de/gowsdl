@@ -118,6 +118,16 @@ func (d *mmaDecoder) Decode(v interface{}) error {
 		}
 		contentType := p.Header.Get("Content-Type")
 		if contentType == "text/xml; charset=UTF-8" {
+			contentID := p.Header.Get("Content-Id")
+			if contentID == "" {
+				return errors.New("invalid multipart content ID")
+			}
+
+			if strings.Contains(contentID, "gowsdl") {
+				// skip request content
+				continue
+			}
+
 			// decode SOAP part
 			err := xml.NewDecoder(p).Decode(v)
 			if err != nil {
@@ -128,11 +138,6 @@ func (d *mmaDecoder) Decode(v interface{}) error {
 			contentID := p.Header.Get("Content-Id")
 			if contentID == "" {
 				return errors.New("invalid multipart content ID")
-			}
-
-			if strings.Contains(contentID, "gowsdl") {
-				// skip request content
-				continue
 			}
 
 			content, err := io.ReadAll(p)
