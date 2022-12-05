@@ -29,8 +29,10 @@ type SOAPEnvelopeResponse struct {
 }
 
 type SOAPEnvelope struct {
-	XMLName xml.Name `xml:"soap:Envelope"`
-	XmlNS   string   `xml:"xmlns:soap,attr"`
+	XMLName  xml.Name `xml:"soap:Envelope"`
+	XmlNS    string   `xml:"xmlns:soap,attr"`
+	XmlNSWs  string   `xml:"xmlns:ws,attr"`
+	XmlNSXsd string   `xml:"xmlns:xsd,attr"`
 
 	Header *SOAPHeader
 	Body   SOAPBody
@@ -192,6 +194,8 @@ const (
 	WssNsType       string = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText"
 	mtomContentType string = `multipart/related; start-info="application/soap+xml"; type="application/xop+xml"; boundary="%s"`
 	XmlNsSoapEnv    string = "http://schemas.xmlsoap.org/soap/envelope/"
+	XmlNsWsEnv      string = "http://ws.bswsnt.vsa"
+	XmlNsXsdEnv     string = "http://ws.bswsnt.vsa/xsd"
 )
 
 type WSSSecurityHeader struct {
@@ -415,7 +419,9 @@ func (s *Client) call(ctx context.Context, soapAction string, request, response 
 	retAttachments *[]MIMEMultipartAttachment) error {
 	// SOAP envelope capable of namespace prefixes
 	envelope := SOAPEnvelope{
-		XmlNS: XmlNsSoapEnv,
+		XmlNS:    XmlNsSoapEnv,
+		XmlNSWs:  XmlNsWsEnv,
+		XmlNSXsd: XmlNsXsdEnv,
 	}
 
 	if s.headers != nil && len(s.headers) > 0 {
@@ -514,7 +520,7 @@ func (s *Client) call(ctx context.Context, soapAction string, request, response 
 	}
 
 	var mmaBoundary string
-	if s.opts.mma{
+	if s.opts.mma {
 		mmaBoundary, err = getMmaHeader(res.Header.Get("Content-Type"))
 		if err != nil {
 			return err
