@@ -456,6 +456,11 @@ var reservedWordsInAttr = map[string]string{
 	"string":      "astring",
 }
 
+var specialCharacterMapping = map[string]string{
+	"+": "Plus",
+	"@": "At",
+}
+
 // Replaces Go reserved keywords to avoid compilation issues
 func replaceReservedWords(identifier string) string {
 	value := reservedWords[identifier]
@@ -476,8 +481,12 @@ func replaceAttrReservedWords(identifier string) string {
 
 // Normalizes value to be used as a valid Go identifier, avoiding compilation issues
 func normalize(value string) string {
+	for k, v := range specialCharacterMapping {
+		value = strings.ReplaceAll(value, k, v)
+	}
+
 	mapping := func(r rune) rune {
-		if r == '.' {
+		if r == '.' || r == '-' {
 			return '_'
 		}
 		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' {
@@ -490,33 +499,34 @@ func normalize(value string) string {
 }
 
 func goString(s string) string {
-	return strings.Replace(s, "\"", "\\\"", -1)
+	return strings.ReplaceAll(s, "\"", "\\\"")
 }
 
 var xsd2GoTypes = map[string]string{
-	"string":        "string",
-	"token":         "string",
-	"float":         "float32",
-	"double":        "float64",
-	"decimal":       "float64",
-	"integer":       "int32",
-	"int":           "int32",
-	"short":         "int16",
-	"byte":          "int8",
-	"long":          "int64",
-	"boolean":       "bool",
-	"datetime":      "soap.XSDDateTime",
-	"date":          "soap.XSDDate",
-	"time":          "soap.XSDTime",
-	"base64binary":  "[]byte",
-	"hexbinary":     "[]byte",
-	"unsignedint":   "uint32",
-	"unsignedshort": "uint16",
-	"unsignedbyte":  "byte",
-	"unsignedlong":  "uint64",
-	"anytype":       "AnyType",
-	"ncname":        "NCName",
-	"anyuri":        "AnyURI",
+	"string":             "string",
+	"token":              "string",
+	"float":              "float32",
+	"double":             "float64",
+	"decimal":            "float64",
+	"integer":            "int32",
+	"int":                "int32",
+	"short":              "int16",
+	"byte":               "int8",
+	"long":               "int64",
+	"boolean":            "bool",
+	"datetime":           "soap.XSDDateTime",
+	"date":               "soap.XSDDate",
+	"time":               "soap.XSDTime",
+	"base64binary":       "[]byte",
+	"hexbinary":          "[]byte",
+	"unsignedint":        "uint32",
+	"nonnegativeinteger": "uint32",
+	"unsignedshort":      "uint16",
+	"unsignedbyte":       "byte",
+	"unsignedlong":       "uint64",
+	"anytype":            "AnyType",
+	"ncname":             "NCName",
+	"anyuri":             "AnyURI",
 }
 
 func removeNS(xsdType string) string {
